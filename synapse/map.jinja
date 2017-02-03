@@ -1,0 +1,3 @@
+{%- import_yaml "synapse/defaults.yaml" as defaults -%}
+
+{%- set synapse = salt['pillar.get']('synapse:lookup', defaults.synapse, merge=True) -%}

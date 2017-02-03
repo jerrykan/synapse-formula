@@ -1,0 +1,112 @@
+{%- from "synapse/map.jinja" import synapse with context -%}
+
+{%- set postgres_db = salt['pillar.get']('synapse:config:database_engine') == 'psycopg2' -%}
+
+include:
+  - synapse
+
+synapse-dependencies:
+  pkg.installed:
+    - pkgs:
+{%- for pkg in synapse.pkg_dependencies %}
+      - {{ pkg }}
+{%- endfor %}
+{%- if postgres_db %}
+      - {{ synapse.pkg_postgres }}
+{%- else %}
+      - {{ synapse.pkg_sqlite3 }}
+{%- endif %}
+
+synapse-user:
+  user.present:
+    - name: {{ synapse.user }}
+    - home: {{ synapse.data_dir }}
+    - createhome: False
+    - shell: /usr/sbin/nologin
+    - system: True
+    - require_in:
+      - service: synapse-service
+
+synapse-dir:
+  file.directory:
+    - name: {{ synapse.synapse_dir }}
+    - user: {{ synapse.user }}
+    - group: {{ synapse.user }}
+
+# The setuptools package in the virtualenv needs to be upgraded before we can
+# install synapse and upgrading pip avoids warnings being displayed
+synapse-virtualenv-pre:
+  virtualenv.managed:
+    - name: {{ synapse.synapse_dir }}
+    - user: {{ synapse.user }}
+    - pip_upgrade: True
+    - pip_pkgs:
+      - pip
+      - setuptools
+    - require:
+      - user: synapse-user
+      - file: synapse-dir
+      - pkg: synapse-dependencies
+
+synapse-virtualenv:
+  virtualenv.managed:
+    - name: {{ synapse.synapse_dir }}
+    - user: {{ synapse.user }}
+    - pip_pkgs:
+      - {{ synapse.synapse_archive }}
+{%- if postgres_db %}
+      - psycopg2
+{%- endif %}
+    - require:
+      - virtualenv: synapse-virtualenv-pre
+      - user: synapse-user
+    - require_in:
+      - service: synapse-service
+
+synapse-systemd-file:
+  file.managed:
+    - name: /etc/systemd/system/synapse.service
+    - source: salt://synapse/files/synapse.service.jinja
+    - template: jinja
+    - require_in:
+      - service: synapse-service
+
+synapse-log-dir:
+  file.directory:
+    - name: {{ synapse.log_dir }}
+    - user: {{ synapse.user }}
+    - group: {{ synapse.user }}
+    - require:
+      - user: synapse-user
+    - require_in:
+      - service: synapse-service
+
+synapse-data-dir:
+  file.directory:
+    - name: {{ synapse.data_dir }}
+    - user: {{ synapse.user }}
+    - group: {{ synapse.user }}
+    - require:
+      - user: synapse-user
+
+synapse-media-store-dir:
+  file.directory:
+    - name: {{ synapse.media_store_dir }}
+    - user: {{ synapse.user }}
+    - group: {{ synapse.user }}
+    - require:
+      - user: synapse-user
+      - file: synapse-data-dir
+    - require_in:
+      - service: synapse-service
+
+synapse-uploads-dir:
+  file.directory:
+    - name: {{ synapse.uploads_dir }}
+    - user: {{ synapse.user }}
+    - group: {{ synapse.user }}
+    - require:
+      - user: synapse-user
+      - file: synapse-data-dir
+    - require_in:
+      - service: synapse-service

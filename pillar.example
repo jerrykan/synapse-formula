@@ -1,0 +1,16 @@
+synapse:
+  # See `synapse/defaults.yaml` for more settings that can be overridden
+  lookup:
+    # Install a specific version of synapse (any URL that pip accepts is OK)
+    synapse_archive: https://github.com/matrix-org/synapse/archive/v0.18.7.tar.gz
+
+  # See `synapse/files/homeserver.yaml.jinja` for complete list of configuration
+  # options.
+  config:
+    # Domain name of the homeserver
+    server_name: example.org
+
+    # Unsecure HTTP listener port
+    http_port: 8000
+    # Interface to bind unsecure HTTP listener on
+    http_bind_address: '127.0.0.1'

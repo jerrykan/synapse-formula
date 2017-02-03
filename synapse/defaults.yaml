@@ -1,0 +1,41 @@
+synapse:
+  pkg_dependencies:
+    - python-virtualenv
+    - build-essential
+    - python-dev
+    - libffi-dev
+    - python-pip
+    - python-setuptools
+    - libssl-dev
+    - libjpeg-dev
+    - libxslt1-dev
+  pkg_postgres: libpq-dev
+  pkg_sqlite3: sqlite3
+
+  synapse_dir: /opt/synapse
+  synapse_archive: https://github.com/matrix-org/synapse/tarball/master
+
+  user: synapse
+
+  conf_dir: /etc/synapse
+  conf_file: /etc/synapse/homeserver.yaml
+  log_conf_file: /etc/synapse/log_config.yaml
+
+  pid_file: /var/run/synapse.pid
+
+  log_dir: /var/log/synapse
+  log_file: /var/log/synapse/homeserver.log
+  console_log_level: WARNING
+  file_log_level: INFO
+
+  data_dir: /var/lib/synapse
+  db_file: /var/lib/synapse/homeserver.db
+  media_store_dir: /var/lib/synapse/media_store
+  uploads_dir: /var/lib/synapse/uploads
+
+  # Default locations if not configured
+  tls_dir: /etc/synapse/tls
+  tls_cert_file: /etc/synapse/tls/homeserver.crt
+  tls_key_file: /etc/synapse/tls/homeserver.key
+  tls_dh_file: /etc/synapse/tls/homeserver.dh
+  signing_key_file: /etc/synapse/tls/homeserver.signing.key
