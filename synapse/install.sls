@@ -4,6 +4,7 @@
 
 include:
   - synapse
+  - synapse.user
 
 synapse-dependencies:
   pkg.installed:
@@ -16,16 +17,6 @@ synapse-dependencies:
 {%- else %}
       - {{ synapse.pkg_sqlite3 }}
 {%- endif %}
-
-synapse-user:
-  user.present:
-    - name: {{ synapse.user }}
-    - home: {{ synapse.data_dir }}
-    - createhome: False
-    - shell: /usr/sbin/nologin
-    - system: True
-    - require_in:
-      - service: synapse-service
 
 synapse-dir:
   file.directory:

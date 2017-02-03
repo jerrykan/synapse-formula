@@ -2,6 +2,7 @@
 
 include:
   - synapse
+  - synapse.user
 
 synapse-conf-dir:
   file.directory:
@@ -38,6 +39,7 @@ synapse-tls-dir:
     - group: {{ synapse.user }}
     - mode: 750
     - require:
+      - user: synapse-user
       - file: synapse-conf-dir
 
 synapse-tls-files:
