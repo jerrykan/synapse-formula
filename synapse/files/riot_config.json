@@ -1,0 +1,15 @@
+{%- from "synapse/map.jinja" import synapse with context -%}
+
+{%- set config = salt['pillar.get']('synapse:riot', {}) -%}
+
+{
+    "default_hs_url": "{{ config.get('default_hs_url', 'https://matrix.org') }}",
+    "default_is_url": "{{ config.get('default_is_url', 'https://vector.im') }}",
+    "brand": "{{ config.get('brand', 'Riot') }}",
+    "integrations_ui_url": "{{ config.get('integrations_ui_url', 'https://scalar.vector.im/') }}",
+    "integrations_rest_url": "{{ config.get('integrations_rest_url', 'https://scalar.vector.im/api') }}",
+    "enableLabs": {{ config.get('enable_labs', 'true')|lower }},
+    "roomDirectory": {
+        "servers": {{ config.get('room_directory_server', ['matrix.org'])|json }}
+    }
+}

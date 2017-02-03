@@ -14,3 +14,9 @@ synapse:
     http_port: 8000
     # Interface to bind unsecure HTTP listener on
     http_bind_address: '127.0.0.1'
+
+  # See `synapse/files/riot_config.json` for complete list of configuration
+  # options.
+  riot:
+    default_hs_url: 'https://matrix.example.org/'
+    brand: Example Org

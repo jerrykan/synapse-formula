@@ -15,11 +15,15 @@ synapse:
   synapse_dir: /opt/synapse
   synapse_archive: https://github.com/matrix-org/synapse/tarball/master
 
+  riot_dir: /opt/riot
+  riot_archive: https://github.com/vector-im/riot-web/releases/download/v0.9.6/vector-v0.9.6.tar.gz
+
   user: synapse
 
   conf_dir: /etc/synapse
   conf_file: /etc/synapse/homeserver.yaml
   log_conf_file: /etc/synapse/log_config.yaml
+  riot_conf_file: /opt/riot/config.json
 
   pid_file: /var/run/synapse.pid
 

@@ -30,3 +30,8 @@ Manages the Synapse configuration files.
 
 Installs the Synapse server and creates the appropriate user, directories and
 certificate.
+
+``synapse.riot``
+------------------
+
+Installs the Riot Matrix client files and manages the configuration file.
