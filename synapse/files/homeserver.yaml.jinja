@@ -112,7 +112,7 @@ listeners:
     bind_address: {{ config.get('http_bind_address', "''") }}
     type: http
 
-    x_forwarded: {{ config.get('https_x_forwarded', False) }}
+    x_forwarded: {{ config.get('http_x_forwarded', False) }}
 
     resources:
       - names: [client, webclient]
