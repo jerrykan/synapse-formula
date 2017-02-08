@@ -34,6 +34,12 @@ synapse-virtualenv-pre:
     - pip_pkgs:
       - pip
       - setuptools
+{%- if synapse.get('venv_env_vars', {}) %}
+    - env_vars:
+{%- for name, value in synapse.venv_env_vars|dictsort %}
+        {{ name }}: {{ value }}
+{%- endfor %}
+{%- endif %}
     - require:
       - user: synapse-user
       - file: synapse-dir
@@ -47,6 +53,12 @@ synapse-virtualenv:
       - {{ synapse.synapse_archive }}
 {%- if postgres_db %}
       - psycopg2
+{%- endif %}
+{%- if synapse.get('venv_env_vars', {}) %}
+    - env_vars:
+{%- for name, value in synapse.venv_env_vars|dictsort %}
+        {{ name }}: {{ value }}
+{%- endfor %}
 {%- endif %}
     - require:
       - virtualenv: synapse-virtualenv-pre
