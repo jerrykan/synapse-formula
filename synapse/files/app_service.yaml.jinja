@@ -1,0 +1,37 @@
+# ID which is unique across all application serivces on the homeserver
+#   Note: This should never change once set.
+id: {{ id }}
+  # The base URL of the application service
+  url: {{ config.url }}
+
+  # The token that the application service should use as it access_token when
+  #   using the Client-Server API
+  as_token: {{ config.as_token }}
+
+  # The token that the homeserver will use when sending requests to the
+  #   application service
+  hs_token: {{ config.hs_token }}
+
+  # The local part of the desired user ID for the application service
+  #   (ie. @<sender>:<homeserver>)
+  sender_localpart: {{ config.localpart }}
+
+  namespaces:
+    users:
+{%- for user in config.get('namespaces', {}).get('users', []) %}
+      - {{ user }}
+{%- else %}
+      {{- ' []' }}
+{%- endfor %}
+    rooms:
+{%- for room in config.get('namespaces', {}).get('rooms', []) %}
+      - {{ room }}
+{%- else %}
+      {{- ' []' }}
+{%- endfor %}
+    aliases:
+{%- for alias in config.get('namespaces', {}).get('aliases', []) %}
+      - {{ alias|yaml }}
+{%- else %}
+      {{- ' []' }}
+{%- endfor %}

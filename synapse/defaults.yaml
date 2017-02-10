@@ -25,6 +25,7 @@ synapse:
   conf_file: /etc/synapse/homeserver.yaml
   log_conf_file: /etc/synapse/log_config.yaml
   riot_conf_file: /opt/riot/config.json
+  app_services_dir: /etc/synapse/app_services
 
   pid_file: /var/run/synapse.pid
 

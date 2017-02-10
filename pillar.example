@@ -15,6 +15,28 @@ synapse:
     # Interface to bind unsecure HTTP listener on
     http_bind_address: '127.0.0.1'
 
+  # See `synapse/files/app_service.yaml.jinja` for complete list of
+  # configuration option
+  app_services:
+    registration:
+      # URL of application service
+      url: 'http://localhost:5000'
+      # Token that app service uses to access the Client-Server API
+      as_token: wfghWEGh3wgWHEf3478sHFWE
+      # Token the homeserver uses to send requests to the app service
+      hs_token: ugw8243igya57aaABGFfgeyu
+
+      # local part of the desired user ID for the app service
+      # (in this case @logging@localhost)
+      localpart: logging
+
+      namespaces:
+        users: []
+        rooms: []
+        aliases:
+          - exclusive: false
+            regex: '#logged_.*'
+
   # See `synapse/files/riot_config.json` for complete list of configuration
   # options.
   riot:

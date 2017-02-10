@@ -1,5 +1,7 @@
 {%- from "synapse/map.jinja" import synapse with context -%}
 
+{%- set app_services = salt['pillar.get']('synapse:app_services', {}) -%}
+
 include:
   - synapse
   - synapse.user
@@ -7,6 +9,10 @@ include:
 synapse-conf-dir:
   file.directory:
     - name: {{ synapse.conf_dir }}
+
+synapse-app-services-dir:
+  file.directory:
+    - name: {{ synapse.app_services_dir }}
 
 synapse-conf-file:
   file.managed:
@@ -19,6 +25,21 @@ synapse-conf-file:
       - service: synapse-service
     - watch_in:
       - module: synapse-restart
+
+{% for id, config in app_services|dictsort %}
+synapse-app-service-{{ id }}-file:
+  file.managed:
+    - name: {{ synapse.app_services_dir }}/{{ id }}.yaml
+    - source: salt://synapse/files/app_service.yaml.jinja
+    - template: jinja
+    - context:
+        id: {{ id }}
+        config: {{ config }}
+    - require:
+      - file: synapse-app-services-dir
+    - watch_in:
+      - module: synapse-restart
+{%- endfor %}
 
 synapse-log-conf-file:
   file.managed:

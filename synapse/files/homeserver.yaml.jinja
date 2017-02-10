@@ -1,6 +1,7 @@
 {%- from "synapse/map.jinja" import synapse with context -%}
 
 {%- set config = salt['pillar.get']('synapse:config', {}) -%}
+{%- set app_services = salt['pillar.get']('synapse:app_services', {}) -%}
 
 # vim:ft=yaml
 # PEM encoded X509 certificate for TLS.
@@ -384,7 +385,12 @@ room_invite_state_types: {{ config.get('room_invite_state_types', [
 
 
 # A list of application service config file to use
-app_service_config_files: {{ config.get('app_service_config_files', []) }}
+app_service_config_files:
+{%- for app_service in app_services.keys()|sort %}
+  - {{ synapse.app_services_dir }}/{{ app_service }}.yaml
+{%- else %}
+    {{- ' []' }}
+{%- endfor %}
 
 
 macaroon_secret_key: "{{ config.get(
