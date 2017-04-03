@@ -19,9 +19,9 @@ riot-archive:
     - skip_verify: True
     - user: {{ synapse.user }}
     - group: {{ synapse.user }}
-    - if_missing: {{ synapse.riot_dir }}/index.html
 {%- if salt['grains.get']('saltversioninfo') < [2016, 11, 0] %}
     - tar_options: '--strip-components=1'
+    - if_missing: {{ synapse.riot_dir }}/index.html
 {%- else %}
     - options: '--strip-components=1'
     - enforce_toplevel: False
