@@ -31,6 +31,7 @@ riot-archive:
     - options: '--strip-components=1'
     - enforce_toplevel: False
 {%- endif %}
+    - clean: True
     - require:
       - user: synapse-user
       - file: riot-dir
