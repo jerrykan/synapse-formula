@@ -15,8 +15,13 @@ riot-archive:
   archive.extracted:
     - name: {{ synapse.riot_dir }}
     - source: {{ synapse.riot_archive }}
-    - archive_format: tar
+{%- if synapse.riot_archive_hash %}
+    - source_hash: {{ synapse.riot_archive_hash }}
+    - source_hash_update: {{ synapse.riot_hash_update }}
+{%- else %}
     - skip_verify: True
+{%- endif %}
+    - archive_format: tar
     - user: {{ synapse.user }}
     - group: {{ synapse.user }}
 {%- if salt['grains.get']('saltversioninfo') < [2016, 11, 0] %}

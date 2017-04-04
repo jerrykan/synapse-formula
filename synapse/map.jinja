@@ -1,3 +1,10 @@
 {%- import_yaml "synapse/defaults.yaml" as defaults -%}
 
+{# Don't use the default hash if the default binary source is not being used #}
+{%- if salt['pillar.get']('synapse:lookup:riot_archive_hash', None) -%}
+    {%- do defaults.synapse.update({
+        'riot_archive_hash': '',
+    })-%}
+{%- endif -%}
+
 {%- set synapse = salt['pillar.get']('synapse:lookup', defaults.synapse, merge=True) -%}

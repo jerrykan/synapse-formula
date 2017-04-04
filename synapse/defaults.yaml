@@ -18,6 +18,8 @@ synapse:
 
   riot_dir: /opt/riot
   riot_archive: https://github.com/vector-im/riot-web/releases/download/v0.9.6/vector-v0.9.6.tar.gz
+  riot_archive_hash: sha256=0c486062dbd9fb7e9330a297bb3fd71eb3591d9db568fd44378b26725b0cba79
+  riot_hash_update: True
 
   user: synapse
 
