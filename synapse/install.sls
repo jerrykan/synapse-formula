@@ -1,6 +1,7 @@
 {%- from "synapse/map.jinja" import synapse with context -%}
 
 {%- set postgres_db = salt['pillar.get']('synapse:config:database_engine') == 'psycopg2' -%}
+{%- set pip_index_url = synapse.get('venv_env_vars', {}).get('PIP_INDEX_URL') -%}
 
 include:
   - synapse
@@ -23,6 +24,21 @@ synapse-dir:
     - name: {{ synapse.synapse_dir }}
     - user: {{ synapse.user }}
     - group: {{ synapse.user }}
+
+{% if pip_index_url -%}
+# Slight hack to make easy_install correctly use an index_url if one is being
+# used with pip
+synapse-pydistutils_cfg-file:
+  file.managed:
+    - name: {{ synapse.data_dir }}/.pydistutils.cfg
+    - contents: |
+        [easy_install]
+        index_url = {{ pip_index_url }}
+    - require:
+      - user: synapse-user
+    - require_in:
+      - virtualenv: synapse-virtualenv-pre
+{%- endif %}
 
 # The setuptools package in the virtualenv needs to be upgraded before we can
 # install synapse and upgrading pip avoids warnings being displayed
