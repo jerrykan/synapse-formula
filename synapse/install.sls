@@ -65,7 +65,6 @@ synapse-virtualenv:
   virtualenv.managed:
     - name: {{ synapse.synapse_dir }}
     - user: {{ synapse.user }}
-    - pip_upgrade: True
     - pip_pkgs:
       - {{ synapse.synapse_archive }}
 {%- if postgres_db %}
