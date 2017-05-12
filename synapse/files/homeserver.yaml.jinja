@@ -260,6 +260,18 @@ url_preview_enabled: {{ config.get('url_preview_enabled', False) }}
 #
 # url_preview_ip_range_whitelist:
 # - '192.168.1.1'
+{%- set url_preview_ip_range_blacklist = config.get('url_preview_ip_range_blacklist', []) -%}
+{%- if url_preview_ip_range_blacklist %}
+url_preview_ip_range_blacklist:
+  {{ url_preview_ip_range_blacklist|yaml(False)|indent(2) }}
+{%- endif %}
+
+{%- set url_preview_ip_range_whitelist = config.get('url_preview_ip_range_whitelist', []) -%}
+{%- if url_preview_ip_range_whitelist %}
+
+url_preview_ip_range_whitelist:
+  {{ url_preview_ip_range_whitelist|yaml(False)|indent(2) }}
+{%- endif %}
 
 # Optional list of URL matches that the URL preview spider is
 # denied from accessing.  You should use url_preview_ip_range_blacklist
@@ -294,6 +306,11 @@ url_preview_enabled: {{ config.get('url_preview_enabled', False) }}
 #
 # # blacklist any URL with a literal IPv4 address
 # - netloc: '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'
+{%- set url_preview_url_blacklist = config.get('url_preview_url_blacklist', []) -%}
+{%- if url_preview_url_blacklist %}
+url_preview_url_blacklist:
+  {{ url_preview_url_blacklist|yaml(False)|indent(2) }}
+{%- endif %}
 
 # The largest allowed URL preview spidering size in bytes
 max_spider_size: "{{ config.get('max_spider_size', '10M') }}"
