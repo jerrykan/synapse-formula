@@ -11,6 +11,9 @@ synapse:
     - libxslt1-dev
   pkg_postgres: libpq-dev
   pkg_sqlite3: sqlite3
+  pkgs_url_previews:
+    - libxml2-dev
+    - libxslt1-dev
   venv_env_vars: {}
 
   synapse_dir: /opt/synapse

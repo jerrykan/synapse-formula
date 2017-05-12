@@ -1,6 +1,7 @@
 {%- from "synapse/map.jinja" import synapse with context -%}
 
 {%- set postgres_db = salt['pillar.get']('synapse:config:database_engine') == 'psycopg2' -%}
+{%- set url_previews = salt['pillar.get']('synapse:config:url_preview_enabled', False) -%}
 {%- set pip_index_url = synapse.get('venv_env_vars', {}).get('PIP_INDEX_URL') -%}
 
 include:
@@ -17,6 +18,11 @@ synapse-dependencies:
       - {{ synapse.pkg_postgres }}
 {%- else %}
       - {{ synapse.pkg_sqlite3 }}
+{%- endif %}
+{%- if url_previews %}
+{%- for pkg in synapse.pkgs_url_previews %}
+      - {{ pkg }}
+{%- endfor %}
 {%- endif %}
 
 synapse-dir:
@@ -69,6 +75,9 @@ synapse-virtualenv:
       - {{ synapse.synapse_archive }}
 {%- if postgres_db %}
       - psycopg2
+{%- endif %}
+{%- if url_previews %}
+      - lxml
 {%- endif %}
 {%- if synapse.get('venv_env_vars', {}) %}
     - env_vars:
