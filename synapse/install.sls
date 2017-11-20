@@ -42,6 +42,7 @@ synapse-pydistutils_cfg-file:
         index_url = {{ pip_index_url }}
     - require:
       - user: synapse-user
+      - file: synapse-data-dir
     - require_in:
       - virtualenv: synapse-virtualenv-pre
 {%- endif %}
