@@ -37,8 +37,11 @@ MA==
 -----END PGP PUBLIC KEY BLOCK-----
 EOF
 
+OS_VERSION="$(. /etc/os-release; echo $VERSION_ID)"
+OS_CODENAME="$(. /etc/os-release; echo $VERSION | sed s/[^a-z]//g)"
+
 APT_REPO_FILE="/etc/apt/sources.list.d/saltstack.list"
-APT_REPO="deb http://repo.saltstack.com/apt/debian/8/amd64/latest jessie main"
+APT_REPO="deb http://repo.saltstack.com/apt/debian/$OS_VERSION/amd64/latest $OS_CODENAME main"
 
 # Add the saltstack repostory
 # TODO: Check if repository exists
@@ -49,9 +52,7 @@ echo "$PUBLIC_KEY" | apt-key add -
 
 # Install salt minion and python testing tools
 apt-get update
-apt-get install -y salt-minion python-pip
-
-pip install testinfra
+apt-get install -y salt-minion
 
 # Configure Minion
 cat <<EOF > /etc/salt/minion
@@ -74,8 +75,9 @@ VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.vm.define "synapse", primary: true do |host|
-        host.vm.box = 'debian/jessie64'
+        host.vm.box = 'debian/stretch64'
         host.vm.host_name = 'synapse.salt.example.com'
+        host.vm.network "private_network", type: "dhcp"
         host.vm.synced_folder "./", "/srv/salt"
         host.vm.provision "shell", inline: $script
     end
