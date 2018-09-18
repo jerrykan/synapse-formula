@@ -5,11 +5,38 @@
 {
     "default_hs_url": "{{ config.get('default_hs_url', 'https://matrix.org') }}",
     "default_is_url": "{{ config.get('default_is_url', 'https://vector.im') }}",
+    "disable_custom_urls": false,
+    "disable_guests": false,
+    "disable_login_language_selector": false,
+    "disable_3pid_login": false,
     "brand": "{{ config.get('brand', 'Riot') }}",
     "integrations_ui_url": "{{ config.get('integrations_ui_url', 'https://scalar.vector.im/') }}",
     "integrations_rest_url": "{{ config.get('integrations_rest_url', 'https://scalar.vector.im/api') }}",
-    "enableLabs": {{ config.get('enable_labs', 'true')|lower }},
+    "integrations_widgets_urls": {{ config.get('integrations_widgets_urls', ['https://scalar-staging.riot.im/scalar/api', 'https://scalar.vector.im/api'])|json(indent=4)|indent(4) }},
+    "integrations_jitsi_widget_url": "{{ config.get('integrations_jitsi_widget_url', 'https://scalar.vector.im/api/widgets/jitsi.html') }}",
+{%- if 'bug_report_endpoint_url' in config %}
+    "bug_report_endpoint_url": "{{ config.get('bug_report_endpoint_url', 'https://riot.im/bugreports/submit') }}",
+{%- endif %}
+    "features": {
+        "feature_groups": "labs",
+        "feature_pinning": "labs"
+    },
+    "default_federate": true,
+    "welcomePageUrl": "home.html",
+    "default_theme": "light",
     "roomDirectory": {
-        "servers": {{ config.get('room_directory_server', ['matrix.org'])|json }}
-    }
+        "servers": {{ config.get('room_directory_server', [])|json(indent=4)|indent(8)}}
+    },
+{%- if 'welcome_user_id' in config %}
+    "welcomeUserId": "{{ config['welcome_user_id'] }}",
+{%- endif %}
+{%- if 'piwik' in config %}
+    "piwik": {
+        "url": "https://piwik.riot.im/",
+        "whitelistedHSUrls": ["https://matrix.org"],
+        "whitelistedISUrls": ["https://vector.im", "https://matrix.org"],
+        "siteId": 1
+    },
+{%- endif %}
+    "enable_presence_by_hs_url": {{ config.get('enable_presence_by_hs_url', {'https://matrix.org': False})|json(indent=4)|indent(4) }}
 }
