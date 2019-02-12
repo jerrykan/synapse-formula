@@ -191,7 +191,11 @@ listeners:
     # On Linux and Mac OS, `::` will listen on all IPv4 and IPv6
     # addresses by default. For most other OSes, this will only listen
     # on IPv6.
-    bind_address: {{ config.get('https_bind_address', ['::', '0.0.0.0'])|yaml }}
+    {%- if 'bind_address' in config %}
+    bind_address: {{ config['bind_address'] }}
+    {%- else %}
+    bind_addresses: {{ config.get('https_bind_address', ['::', '0.0.0.0'])|yaml }}
+    {%- endif %}
 
     # This is a 'http' listener, allows us to specify 'resources'.
     type: http
@@ -229,7 +233,11 @@ listeners:
   # For when matrix traffic passes through loadbalancer that unwraps TLS.
   - port: {{ config.get('http_port', 8008) }}
     tls: false
-    bind_address: {{ config.get('http_bind_address', ['::', '0.0.0.0'])|tojson }}
+    {% if 'http_bind_address' in config %}
+    bind_address: {{ config['http_bind_address'] }}
+    {%- else %}
+    bind_addresses: {{ config.get('http_bind_address', ['::', '0.0.0.0'])|yaml }}
+    {%- endif %}
     type: http
 
     x_forwarded: {{ config.get('http_x_forwarded', False) }}
