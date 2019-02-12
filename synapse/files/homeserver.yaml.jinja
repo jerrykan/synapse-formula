@@ -41,7 +41,7 @@ acme:
     # ACME support is disabled by default. Uncomment the following line
     # to enable it.
     #
-    # enabled: true
+    enabled: {{ config.get('no_tls', False) }}
 
     # Endpoint to use to request certificates. If you only want to test,
     # use Let's Encrypt's staging url:
