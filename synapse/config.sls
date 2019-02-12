@@ -66,7 +66,7 @@ synapse-tls-dir:
 synapse-tls-files:
   cmd.run:
     - name: {{ synapse.synapse_dir }}/bin/python -m synapse.app.homeserver --generate-keys -c {{ synapse.conf_file }}
-    - unless: test -f {{ synapse.tls_cert_file }} -a -f {{ synapse.tls_key_file }} -a -f {{ synapse.tls_dh_file }} -a -f {{ synapse.signing_key_file }}
+    - unless: test -f {{ synapse.tls_cert_file }} -a -f {{ synapse.tls_key_file }}  -a -f {{ synapse.signing_key_file }}
     - require:
       - file: synapse-conf-file
       - file: synapse-tls-dir

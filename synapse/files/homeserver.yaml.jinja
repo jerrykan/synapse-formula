@@ -4,20 +4,72 @@
 {%- set app_services = salt['pillar.get']('synapse:app_services', {}) -%}
 
 # vim:ft=yaml
-# PEM encoded X509 certificate for TLS.
-# You can replace the self-signed certificate that synapse
-# autogenerates on launch with your own SSL certificate + key pair
-# if you like.  Any required intermediary certificates can be
-# appended after the primary certificate in hierarchical order.
+# PEM-encoded X509 certificate for TLS.
+# This certificate, as of Synapse 1.0, will need to be a valid and verifiable
+# certificate, signed by a recognised Certificate Authority.
+#
+# See 'ACME support' below to enable auto-provisioning this certificate via
+# Let's Encrypt.
+#
 tls_certificate_path: "{{ config.get('tls_certificate_path', synapse.tls_cert_file) }}"
 
-# PEM encoded private key for TLS
+# PEM-encoded private key for TLS
 tls_private_key_path: "{{ config.get('tls_private_key_path', synapse.tls_key_file) }}"
 
-# PEM dh parameters for ephemeral keys
-tls_dh_params_path: "{{ config.get('tls_dh_params_path', synapse.tls_dh_file) }}"
+# ACME support: This will configure Synapse to request a valid TLS certificate
+# for your configured `server_name` via Let's Encrypt.
+#
+# Note that provisioning a certificate in this way requires port 80 to be
+# routed to Synapse so that it can complete the http-01 ACME challenge.
+# By default, if you enable ACME support, Synapse will attempt to listen on
+# port 80 for incoming http-01 challenges - however, this will likely fail
+# with 'Permission denied' or a similar error.
+#
+# There are a couple of potential solutions to this:
+#
+#  * If you already have an Apache, Nginx, or similar listening on port 80,
+#    you can configure Synapse to use an alternate port, and have your web
+#    server forward the requests. For example, assuming you set 'port: 8009'
+#    below, on Apache, you would write:
+#
+#    ProxyPass /.well-known/acme-challenge http://localhost:8009/.well-known/acme-challenge
+#
+#  * Alternatively, you can use something like `authbind` to give Synapse
+#    permission to listen on port 80.
+#
+acme:
+    # ACME support is disabled by default. Uncomment the following line
+    # to enable it.
+    #
+    # enabled: true
 
-# Don't bind to the https port
+    # Endpoint to use to request certificates. If you only want to test,
+    # use Let's Encrypt's staging url:
+    #     https://acme-staging.api.letsencrypt.org/directory
+    #
+    # url: https://acme-v01.api.letsencrypt.org/directory
+
+    # Port number to listen on for the HTTP-01 challenge. Change this if
+    # you are forwarding connections through Apache/Nginx/etc.
+    #
+    # port: 80
+
+    # Local addresses to listen on for incoming connections.
+    # Again, you may want to change this if you are forwarding connections
+    # through Apache/Nginx/etc.
+    #
+    # bind_addresses: ['::', '0.0.0.0']
+
+    # How many days remaining on a certificate before it is renewed.
+    #
+    # reprovision_threshold: 30
+
+# If your server runs behind a reverse-proxy which terminates TLS connections
+# (for both client and federation connections), it may be useful to disable
+# All TLS support for incoming connections. Setting no_tls to True will
+# do so (and avoid the need to give synapse a TLS private key).
+#
+# no_tls: True
 no_tls: {{ config.get('no_tls', False) }}
 
 # List of allowed TLS fingerprints for this server to publish along
@@ -26,7 +78,7 @@ no_tls: {{ config.get('no_tls', False) }}
 # certificates returned by this server match one of the fingerprints.
 #
 # Synapse automatically adds the fingerprint of its own certificate
-# to the list. So if federation traffic is handle directly by synapse
+# to the list. So if federation traffic is handled directly by synapse
 # then no modification to the list is required.
 #
 # If synapse is run behind a load balancer that handles the TLS then it
@@ -47,6 +99,7 @@ no_tls: {{ config.get('no_tls', False) }}
 #
 tls_fingerprints: {{ config.get('tls_fingerprints', []) }}
 # tls_fingerprints: [{"sha256": "<base64_encoded_sha256_fingerprint>"}]
+
 
 
 ## Server ##
@@ -79,24 +132,29 @@ pid_file: {{ synapse.pid_file }}
 # different cores. See
 # https://www.mirantis.com/blog/improve-performance-python-programs-restricting-single-cpu/.
 #
+# This setting requires the affinity package to be installed!
+#
 # cpu_affinity: 0xFFFFFFFF
 
-# Whether to serve a web client from the HTTP/HTTPS root resource.
-web_client: {{ config.get('web_client', True) }}
-
-# The root directory to server for the above web client.
-# If left undefined, synapse will serve the matrix-angular-sdk web client.
-# Make sure matrix-angular-sdk is installed with pip if web_client is True
-# and web_client_location is undefined
+# The path to the web client which will be served at /_matrix/client/
+# if 'webclient' is configured under the 'listeners' configuration.
+#
 # web_client_location: "/path/to/web/root"
 
-# The public-facing base URL for the client API (not including _matrix/...)
-# public_baseurl: https://example.com:8448/
+# The public-facing base URL that clients use to access this HS
+# (not including _matrix/...). This is the same URL a user would
+# enter into the 'custom HS URL' field on their client. If you
+# use synapse with a reverse proxy, this should be the URL to reach
+# synapse via the proxy.
+# public_baseurl: https://example.com/
 
 # Set the soft limit on the number of file descriptors synapse can use
 # Zero is used to indicate synapse should set the soft limit to the
 # hard limit.
 soft_file_limit: {{ config.get('soft_file_limit', 0) }}
+
+# Set to false to disable presence tracking on this homeserver.
+use_presence: true
 
 # The GC threshold parameters to pass to `gc.set_threshold`, if defined
 # gc_thresholds: [700, 10, 10]
@@ -109,6 +167,17 @@ soft_file_limit: {{ config.get('soft_file_limit', 0) }}
 # (except those sent by local server admins). The default is False.
 # block_non_admin_invites: True
 
+# Restrict federation to the following whitelist of domains.
+# N.B. we recommend also firewalling your federation listener to limit
+# inbound federation traffic as early as possible, rather than relying
+# purely on this application-layer restriction.  If not specified, the
+# default is to whitelist everything.
+#
+# federation_domain_whitelist:
+#  - lon.example.com
+#  - nyc.example.com
+#  - syd.example.com
+
 # List of ports that Synapse should listen on, their purpose and their
 # configuration.
 listeners:
@@ -118,9 +187,11 @@ listeners:
     # The port to listen for HTTPS requests on.
     port: {{ config.get('https_port', 8443) }}
 
-    # Local interface to listen on.
-    # The empty string will cause synapse to listen on all interfaces.
-    bind_address: {{ config.get('https_bind_address', "''") }}
+    # Local addresses to listen on.
+    # On Linux and Mac OS, `::` will listen on all IPv4 and IPv6
+    # addresses by default. For most other OSes, this will only listen
+    # on IPv6.
+    bind_address: {{ config.get('https_bind_address', ['::', '0.0.0.0'])|yaml }}
 
     # This is a 'http' listener, allows us to specify 'resources'.
     type: http
@@ -136,8 +207,8 @@ listeners:
       -
         # List of resources to host on this listener.
         names:
-          - client     # The client-server APIs, both v1 and v2
-          - webclient  # The bundled webclient.
+          - client       # The client-server APIs, both v1 and v2
+          # - webclient  # A web client. Requires web_client_location to be set.
 
         # Should synapse compress HTTP responses to clients that support it?
         # This should be disabled if running synapse behind a load balancer
@@ -158,13 +229,13 @@ listeners:
   # For when matrix traffic passes through loadbalancer that unwraps TLS.
   - port: {{ config.get('http_port', 8008) }}
     tls: false
-    bind_address: {{ config.get('http_bind_address', "''") }}
+    bind_address: {{ config.get('http_bind_address', ['::', '0.0.0.0'])|tojson }}
     type: http
 
     x_forwarded: {{ config.get('http_x_forwarded', False) }}
 
     resources:
-      - names: [client, webclient]
+      - names: [client]
         compress: true
       - names: [federation]
         compress: false
@@ -172,8 +243,45 @@ listeners:
   # Turn on the twisted ssh manhole service on localhost on the given
   # port.
   # - port: 9000
-  #   bind_address: 127.0.0.1
+  #   bind_addresses: ['::1', '127.0.0.1']
   #   type: manhole
+
+
+# Homeserver blocking
+#
+# How to reach the server admin, used in ResourceLimitError
+# admin_contact: 'mailto:admin@server.com'
+#
+# Global block config
+#
+# hs_disabled: False
+# hs_disabled_message: 'Human readable reason for why the HS is blocked'
+# hs_disabled_limit_type: 'error code(str), to help clients decode reason'
+#
+# Monthly Active User Blocking
+#
+# Enables monthly active user checking
+# limit_usage_by_mau: False
+# max_mau_value: 50
+# mau_trial_days: 2
+#
+# If enabled, the metrics for the number of monthly active users will
+# be populated, however no one will be limited. If limit_usage_by_mau
+# is true, this is implied to be true.
+# mau_stats_only: False
+#
+# Sometimes the server admin will want to ensure certain accounts are
+# never blocked by mau checking. These accounts are specified here.
+#
+# mau_limit_reserved_threepids:
+# - medium: 'email'
+#   address: 'reserved_user@example.com'
+#
+# Room searching
+#
+# If disabled, new messages will not be indexed for searching and users
+# will receive errors when searching for messages. Defaults to enabled.
+# enable_search: true
 
 
 # Database configuration
@@ -198,19 +306,8 @@ event_cache_size: "{{ config.get('event_cache_size', '10K') }}"
 
 
 
-# Logging verbosity level. Ignored if log_config is specified.
-verbose: {{ config.get('verbose', 0) }}
-
-# File to write logging to. Ignored if log_config is specified.
-log_file: "{{ synapse.log_file }}"
-
 # A yaml python logging config file
 log_config: "{{ synapse.log_conf_file }}"
-
-# Stop twisted from discarding the stack traces of exceptions in
-# deferreds by waiting a reactor tick before running a deferred's
-# callbacks.
-# full_twisted_stacktraces: true
 
 
 ## Ratelimiting ##
@@ -245,13 +342,19 @@ federation_rc_concurrent: {{ config.get('federation_rc_concurrent', 3) }}
 # Directory where uploaded images and attachments are stored.
 media_store_path: "{{ synapse.media_store_dir }}"
 
-# A secondary directory where uploaded images and attachments are
-# stored as a backup.
-# backup_media_store_path: "/home/vagrant/media_store"
-
-# Whether to wait for successful write to backup media store before
-# returning successfully.
-# synchronous_backup_media_store: false
+# Media storage providers allow media to be stored in different
+# locations.
+# media_storage_providers:
+# - module: file_system
+#   # Whether to write new local files.
+#   store_local: false
+#   # Whether to write new remote media
+#   store_remote: false
+#   # Whether to block upload requests waiting for write to this
+#   # provider to complete
+#   store_synchronous: false
+#   config:
+#     directory: /mnt/some/other/directory
 
 # Directory where in-progress uploads are stored.
 uploads_path: "{{ synapse.uploads_dir }}"
@@ -307,6 +410,9 @@ url_preview_enabled: {{ config.get('url_preview_enabled', False) }}
 # - '192.168.0.0/16'
 # - '100.64.0.0/10'
 # - '169.254.0.0/16'
+# - '::1/128'
+# - 'fe80::/64'
+# - 'fc00::/7'
 #
 # List of IP address CIDR ranges that the URL preview spider is allowed
 # to access even if they are specified in url_preview_ip_range_blacklist.
@@ -403,6 +509,11 @@ turn_uris: {{ config.get('turn_uris', []) }}
 # The shared secret used to compute passwords for the TURN server
 turn_shared_secret: "{{ config.get('turn_shared_secret', 'YOUR_SHARED_SECRET') }}"
 
+# The Username and password if the TURN server needs them and
+# does not use a token
+#turn_username: "TURNSERVER_USERNAME"
+#turn_password: "TURNSERVER_PASSWORD"
+
 # How long generated TURN credentials last
 turn_user_lifetime: "{{ config.get('turn_user_lifetime', '1h') }}"
 
@@ -419,6 +530,28 @@ turn_allow_guests: {{ config.get('turn_allow_guests', True) }}
 # Enable registration for new users.
 enable_registration: {{ config.get('enable_registration', False) }}
 
+# The user must provide all of the below types of 3PID when registering.
+#
+# registrations_require_3pid:
+#     - email
+#     - msisdn
+
+# Explicitly disable asking for MSISDNs from the registration
+# flow (overrides registrations_require_3pid if MSISDNs are set as required)
+#
+# disable_msisdn_registration = True
+
+# Mandate that users are only allowed to associate certain formats of
+# 3PIDs with accounts on this server.
+#
+# allowed_local_3pids:
+#     - medium: email
+#       pattern: '.*@matrix\.org'
+#     - medium: email
+#       pattern: '.*@vector\.im'
+#     - medium: msisdn
+#       pattern: '\+44'
+
 # If set, allows registration by anyone who also has the shared
 # secret, even if registration is otherwise disabled.
 registration_shared_secret: "{{ config.get(
@@ -430,7 +563,9 @@ registration_shared_secret: "{{ config.get(
 
 # Set the number of bcrypt rounds used to generate password hash.
 # Larger numbers increase the work factor needed to generate the hash.
-# The default number of rounds is 12.
+# The default number is 12 (which equates to 2^12 rounds).
+# N.B. that increasing this will exponentially increase the time required
+# to register or login - e.g. 24 => 2^24 rounds which will take >20 mins.
 bcrypt_rounds: {{ config.get('bcrypt_rounds', 12) }}
 
 # Allows users to register as guests without a password/email/etc, and
@@ -438,18 +573,35 @@ bcrypt_rounds: {{ config.get('bcrypt_rounds', 12) }}
 # accessible to anonymous users.
 allow_guest_access: {{ config.get('allow_guest_access', False) }}
 
+# The identity server which we suggest that clients should use when users log
+# in on this server.
+#
+# (By default, no suggestion is made, so it is left up to the client.
+# This setting is ignored unless public_baseurl is also set.)
+#
+# default_identity_server: https://matrix.org
+
 # The list of identity servers trusted to verify third party
 # identifiers by this server.
+#
+# Also defines the ID server which will be called when an account is
+# deactivated (one will be picked arbitrarily).
 trusted_third_party_id_servers: {{ config.get('trusted_third_party_id_servers', [
     'matrix.org',
     'vector.im',
-    'riot.im',
 ])|yaml }}
 
 # Users who register on this homeserver will automatically be joined
 # to these rooms
 #auto_join_rooms:
 #    - "#example:example.com"
+
+# Where auto_join_rooms are specified, setting this flag ensures that the
+# the rooms exist by creating them when the first user on the
+# homeserver registers.
+# Setting to false means that if the rooms are not manually created,
+# users cannot be auto-joined since they do not exist.
+autocreate_auto_join_rooms: true
 
 
 ## Metrics ###
@@ -467,7 +619,7 @@ room_invite_state_types: {{ config.get('room_invite_state_types', [
     'm.room.canonical_alias',
     'm.room.avatar',
     'm.room.name',
-])|json }}
+])|yaml }}
 
 
 # A list of application service config file to use
@@ -478,7 +630,13 @@ app_service_config_files:
     {{- ' []' }}
 {%- endfor %}
 
+# Whether or not to track application service IP addresses. Implicitly
+# enables MAU tracking for application service users.
+track_appservice_user_ips: False
 
+# a secret which is used to sign access tokens. If none is specified,
+# the registration_shared_secret is used, if one is given; otherwise,
+# a secret key is derived from the signing key.
 macaroon_secret_key: "{{ config.get(
     'macaroon_secret_key',
     salt['grains.get_or_set_hash'](
@@ -488,6 +646,16 @@ macaroon_secret_key: "{{ config.get(
 
 # Used to enable access token expiration.
 expire_access_token: {{ config.get('expire_access_token', False) }}
+
+# a secret which is used to calculate HMACs for form values, to stop
+# falsification of values. Must be specified for the User Consent
+# forms to work.
+form_secret: "{{ config.get(
+    'form_secret',
+    salt['grains.get_or_set_hash'](
+        'synapse:form_secret',
+        length=50
+)) }}"
 
 ## Signing Keys ##
 
@@ -519,15 +687,48 @@ perspectives:
 
 
 
-# Enable SAML2 for registration and login. Uses pysaml2
-# config_path:      Path to the sp_conf.py configuration file
-# idp_redirect_url: Identity provider URL which will redirect
-#                   the user back to /login/saml2 with proper info.
-# See pysaml2 docs for format of config.
-#saml2_config:
-#   enabled: true
-#   config_path: "/etc/synapse/sp_conf.py"
-#   idp_redirect_url: "http://example.com/idp"
+# Enable SAML2 for registration and login. Uses pysaml2.
+#
+# saml2_config:
+#
+#   # The following is the configuration for the pysaml2 Service Provider.
+#   # See pysaml2 docs for format of config.
+#   #
+#   # Default values will be used for the 'entityid' and 'service' settings,
+#   # so it is not normally necessary to specify them unless you need to
+#   # override them.
+#
+#   sp_config:
+#     # point this to the IdP's metadata. You can use either a local file or
+#     # (preferably) a URL.
+#     metadata:
+#       # local: ["saml2/idp.xml"]
+#       remote:
+#         - url: https://our_idp/metadata.xml
+#
+#     # The following is just used to generate our metadata xml, and you
+#     # may well not need it, depending on your setup. Alternatively you
+#     # may need a whole lot more detail - see the pysaml2 docs!
+#
+#     description: ["My awesome SP", "en"]
+#     name: ["Test SP", "en"]
+#
+#     organization:
+#       name: Example com
+#       display_name:
+#         - ["Example co", "en"]
+#       url: "http://example.com"
+#
+#     contact_person:
+#       - given_name: Bob
+#         sur_name: "the Sysadmin"
+#         email_address": ["admin@example.com"]
+#         contact_type": technical
+#
+#   # Instead of putting the config inline as above, you can specify a
+#   # separate pysaml2 configuration file:
+#   #
+#   # config_path: "/data/src/synapse/sp_conf.py"
 
 
 
@@ -559,6 +760,9 @@ password_config:
 
 
 # Enable sending emails for notification events
+# Defining a custom URL for Riot is only needed if email notifications
+# should contain links to a self-hosted installation of Riot; when set
+# the "app_name" setting is ignored.
 #
 # If your SMTP server requires authentication, the optional smtp_user &
 # smtp_pass variables should be used
@@ -572,10 +776,13 @@ password_config:
 #   require_transport_security: False
 #   notif_from: "Your Friendly %(app)s Home Server <noreply@example.com>"
 #   app_name: Matrix
-#   template_dir: res/templates
+#   # if template_dir is unset, uses the example templates that are part of
+#   # the Synapse distribution.
+#   #template_dir: res/templates
 #   notif_template_html: notif_mail.html
 #   notif_template_text: notif_mail.txt
 #   notif_for_new_users: True
+#   riot_base_url: "http://localhost/riot"
 
 
 {% if config.get('auth_ldap_enabled') -%}
@@ -601,23 +808,20 @@ password_providers:
 
 
 
-# Control how push messages are sent to google/apple to notifications.
-# Normally every message said in a room with one or more people using
-# mobile devices will be posted to a push server hosted by matrix.org
-# which is registered with google and apple in order to allow push
-# notifications to be sent to these mobile devices.
-#
-# Setting redact_content to true will make the push messages contain no
-# message content which will provide increased privacy. This is a
-# temporary solution pending improvements to Android and iPhone apps
-# to get content from the app rather than the notification.
-#
+# Clients requesting push notifications can either have the body of
+# the message sent in the notification poke along with other details
+# like the sender, or just the event ID and room ID (`event_id_only`).
+# If clients choose the former, this option controls whether the
+# notification request includes the content of the event (other details
+# like the sender are still included). For `event_id_only` push, it
+# has no effect.
+
 # For modern android devices the notification content will still appear
 # because it is loaded by the app. iPhone, however will send a
 # notification saying only that a message arrived and who it came from.
 #
 #push:
-#   redact_content: false
+#   include_content: true
 
 
 # spam_checker:
@@ -632,3 +836,103 @@ enable_group_creation: {{ config.get('enable_group_creation', False) }}
 # If enabled, non server admins can only create groups with local parts
 # starting with this prefix
 # group_creation_prefix: "unofficial/"
+
+
+
+# User Directory configuration
+#
+# 'search_all_users' defines whether to search all users visible to your HS
+# when searching the user directory, rather than limiting to users visible
+# in public rooms.  Defaults to false.  If you set it True, you'll have to run
+# UPDATE user_directory_stream_pos SET stream_id = NULL;
+# on your database to tell it to rebuild the user_directory search indexes.
+#
+#user_directory:
+#   search_all_users: false
+
+
+# User Consent configuration
+#
+# for detailed instructions, see
+# https://github.com/matrix-org/synapse/blob/master/docs/consent_tracking.md
+#
+# Parts of this section are required if enabling the 'consent' resource under
+# 'listeners', in particular 'template_dir' and 'version'.
+#
+# 'template_dir' gives the location of the templates for the HTML forms.
+# This directory should contain one subdirectory per language (eg, 'en', 'fr'),
+# and each language directory should contain the policy document (named as
+# '<version>.html') and a success page (success.html).
+#
+# 'version' specifies the 'current' version of the policy document. It defines
+# the version to be served by the consent resource if there is no 'v'
+# parameter.
+#
+# 'server_notice_content', if enabled, will send a user a "Server Notice"
+# asking them to consent to the privacy policy. The 'server_notices' section
+# must also be configured for this to work. Notices will *not* be sent to
+# guest users unless 'send_server_notice_to_guests' is set to true.
+#
+# 'block_events_error', if set, will block any attempts to send events
+# until the user consents to the privacy policy. The value of the setting is
+# used as the text of the error.
+#
+# 'require_at_registration', if enabled, will add a step to the registration
+# process, similar to how captcha works. Users will be required to accept the
+# policy before their account is created.
+#
+# 'policy_name' is the display name of the policy users will see when registering
+# for an account. Has no effect unless `require_at_registration` is enabled.
+# Defaults to "Privacy Policy".
+#
+# user_consent:
+#   template_dir: res/templates/privacy
+#   version: 1.0
+#   server_notice_content:
+#     msgtype: m.text
+#     body: >-
+#       To continue using this homeserver you must review and agree to the
+#       terms and conditions at %(consent_uri)s
+#   send_server_notice_to_guests: True
+#   block_events_error: >-
+#     To continue using this homeserver you must review and agree to the
+#     terms and conditions at %(consent_uri)s
+#   require_at_registration: False
+#   policy_name: Privacy Policy
+#
+
+
+# Server Notices room configuration
+#
+# Uncomment this section to enable a room which can be used to send notices
+# from the server to users. It is a special room which cannot be left; notices
+# come from a special "notices" user id.
+#
+# If you uncomment this section, you *must* define the system_mxid_localpart
+# setting, which defines the id of the user which will be used to send the
+# notices.
+#
+# It's also possible to override the room name, the display name of the
+# "notices" user, and the avatar for the user.
+#
+# server_notices:
+#   system_mxid_localpart: notices
+#   system_mxid_display_name: "Server Notices"
+#   system_mxid_avatar_url: "mxc://server.com/oumMVlgDnLYFaPVkExemNVVZ"
+#   room_name: "Server Notices"
+
+
+
+# The `alias_creation` option controls who's allowed to create aliases
+# on this server.
+#
+# The format of this option is a list of rules that contain globs that
+# match against user_id and the new alias (fully qualified with server
+# name). The action in the first rule that matches is taken, which can
+# currently either be "allow" or "deny".
+#
+# If no rules match the request is denied.
+alias_creation_rules:
+    - user_id: "*"
+      alias: "*"
+      action: allow
