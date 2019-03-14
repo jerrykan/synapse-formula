@@ -12,7 +12,9 @@
     "brand": "{{ config.get('brand', 'Riot') }}",
     "integrations_ui_url": "{{ config.get('integrations_ui_url', 'https://scalar.vector.im/') }}",
     "integrations_rest_url": "{{ config.get('integrations_rest_url', 'https://scalar.vector.im/api') }}",
-    "integrations_widgets_urls": {{ config.get('integrations_widgets_urls', ['https://scalar-staging.riot.im/scalar/api', 'https://scalar.vector.im/api'])|json(indent=4)|indent(4) }},
+{%- if 'integrations_rest_url' in config %}
+    "integrations_widgets_urls": {{ config['integrations_widgets_urls']|json(indent=4)|indent(4) }},
+{%- endif %}
     "integrations_jitsi_widget_url": "{{ config.get('integrations_jitsi_widget_url', 'https://scalar.vector.im/api/widgets/jitsi.html') }}",
 {%- if 'bug_report_endpoint_url' in config %}
     "bug_report_endpoint_url": "{{ config.get('bug_report_endpoint_url', 'https://riot.im/bugreports/submit') }}",
@@ -22,7 +24,6 @@
         "feature_pinning": "labs"
     },
     "default_federate": true,
-    "welcomePageUrl": "home.html",
     "default_theme": "light",
     "roomDirectory": {
         "servers": {{ config.get('room_directory_server', [])|json(indent=4)|indent(8)}}

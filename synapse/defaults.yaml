@@ -20,8 +20,8 @@ synapse:
   synapse_archive: https://github.com/matrix-org/synapse/archive/v0.99.0.tar.gz
 
   riot_dir: /opt/riot
-  riot_archive: https://github.com/vector-im/riot-web/releases/download/v0.9.6/vector-v0.9.6.tar.gz
-  riot_archive_hash: sha256=0c486062dbd9fb7e9330a297bb3fd71eb3591d9db568fd44378b26725b0cba79
+  riot_archive: https://github.com/vector-im/riot-web/releases/download/v1.0.3/riot-v1.0.3.tar.gz
+  riot_archive_hash: sha256=2585c8b2227fb71e72d76d3c2a19ddb914a4131e3e1be2fe4f2fbd14f9219fbf
   riot_hash_update: True
 
   user: synapse
