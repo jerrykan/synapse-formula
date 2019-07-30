@@ -4,6 +4,15 @@
 {%- set url_previews = salt['pillar.get']('synapse:config:url_preview_enabled', False) -%}
 {%- set pip_index_url = synapse.get('venv_env_vars', {}).get('PIP_INDEX_URL') -%}
 
+{%- if synapse.python2 -%}
+  {%- set pkg_dependencies = synapse.pkg_dependencies_common + synapse.pkg_dependencies_python2 -%}
+  {%- set python_binary = 'python2' -%}
+{%- else -%}
+  {%- set pkg_dependencies = synapse.pkg_dependencies_common + synapse.pkg_dependencies_python3 -%}
+  {%- set python_binary = 'python3' -%}
+{%- endif -%}
+
+
 include:
   - synapse
   - synapse.user
@@ -11,7 +20,7 @@ include:
 synapse-dependencies:
   pkg.installed:
     - pkgs:
-{%- for pkg in synapse.pkg_dependencies %}
+{%- for pkg in pkg_dependencies %}
       - {{ pkg }}
 {%- endfor %}
 {%- if postgres_db %}
@@ -53,6 +62,7 @@ synapse-virtualenv-pre:
   virtualenv.managed:
     - name: {{ synapse.synapse_dir }}
     - user: {{ synapse.user }}
+    - python: {{ python_binary }}
     - pip_upgrade: True
     - pip_pkgs:
       - pip
@@ -72,6 +82,7 @@ synapse-virtualenv:
   virtualenv.managed:
     - name: {{ synapse.synapse_dir }}
     - user: {{ synapse.user }}
+    - python: {{ python_binary }}
     - pip_pkgs:
       - {{ synapse.synapse_archive }}
 {%- if postgres_db %}
