@@ -24,7 +24,7 @@ synapse:
   venv_env_vars: {}
 
   synapse_dir: /opt/synapse
-  synapse_archive: https://github.com/matrix-org/synapse/archive/v0.99.0.tar.gz
+  synapse_archive: https://github.com/matrix-org/synapse/archive/v1.0.0.tar.gz
 
   riot_dir: /opt/riot
   riot_archive: https://github.com/vector-im/riot-web/releases/download/v1.0.3/riot-v1.0.3.tar.gz
