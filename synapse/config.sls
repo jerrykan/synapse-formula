@@ -4,6 +4,7 @@
 
 include:
   - synapse
+  - synapse.install
   - synapse.user
 
 synapse-conf-dir:
@@ -70,5 +71,6 @@ synapse-tls-files:
     - require:
       - file: synapse-conf-file
       - file: synapse-tls-dir
+      - virtualenv: synapse-virtualenv
     - watch_in:
       - module: synapse-restart
