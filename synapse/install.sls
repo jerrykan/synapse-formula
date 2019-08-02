@@ -2,6 +2,7 @@
 
 {%- set postgres_db = salt['pillar.get']('synapse:config:database_engine') == 'psycopg2' -%}
 {%- set url_previews = salt['pillar.get']('synapse:config:url_preview_enabled', False) -%}
+{%- set auth_ldap = salt['pillar.get']('synapse:config:auth_ldap_enabled') is sameas True -%}
 {%- set pip_index_url = synapse.get('venv_env_vars', {}).get('PIP_INDEX_URL') -%}
 
 {%- if synapse.python2 -%}
@@ -90,6 +91,9 @@ synapse-virtualenv:
 {%- endif %}
 {%- if url_previews %}
       - lxml
+{%- endif %}
+{%- if auth_ldap %}
+      - matrix-synapse-ldap3
 {%- endif %}
 {%- if synapse.get('venv_env_vars', {}) %}
     - env_vars:
